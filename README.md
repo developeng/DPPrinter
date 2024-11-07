@@ -43,7 +43,7 @@
 
 2.58mm小票打印指令： DPEscCommand
     
-    ![Example Image](bill.png)
+![Example Image](bill.png)
 
 3.标签打印指令： DPTscCommand
 

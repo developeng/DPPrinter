@@ -42,8 +42,9 @@
         
 
 2.58mm小票打印指令： DPEscCommand
+
+    <img src="bill.pngg" alt="Logo" style="width: 150px; height: 450px;">
     
-![Example Image](bill.png){width=150px height=450px}
 
 3.标签打印指令： DPTscCommand
 

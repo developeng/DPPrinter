@@ -13,7 +13,7 @@ extension ViewController {
     
     func escTest() {
         let command:DPEscCommand = DPEscCommand()
-        command.isChangeSpace = true
+        command.isChangeSpace = false
         command.appendText("单据标题",alignment: .center,fontSize: .titleHMiddle, fontStyle: .bold)
         command.appendText("新时器烤肉（虚拟测试门店9090）")
         command.appendText("地址：金翠芳")

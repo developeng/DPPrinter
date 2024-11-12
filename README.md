@@ -2,12 +2,29 @@
 
 1.打印机连接
 
-1>：蓝牙扫描：
+准备工作：
 
-        DPBLEManager.shared().scanForPeripherals(printerServiceUUIDs) { central, peripheral, advertisementData, rssi in
-            // 打印机名称
-            let deviceName = peripheral.name ?? "Unknown Device"
+    //添加权限：在info.plist 文件中添加一下键值对
+    
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>我们需要您的许可来使用蓝牙功能。</string>
+    key>NSBluetoothPeripheralUsageDescription</key>
+    <string>我们需要您的许可来使用蓝牙外设。</string>
+    
+
+1>：蓝牙扫描：
+        
+        // 检查蓝牙状态
+        DPBLEManager.shared().startCheckStatus { central in
+            if central.state == .poweredOn {
+                // 开始扫描蓝牙
+                DPBLEManager.shared().scan(self.printerServiceUUIDs) { central, peripheral, advertisementData, rssi in
+                    // 打印机名称
+                    let deviceName = peripheral.name ?? "Unknown Device"
+                }
+            }
         }
+        
 2>：连接设备：
 
         DPBLEManager.shared().connect(peripheral, options: nil, stopScanAfterConnected: true, serviceUUIDs: printerServiceUUIDs, characteristicUUIDs: nil) { stage, peripheral, service, character,

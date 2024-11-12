@@ -19,6 +19,8 @@ enum DPOptionStage {
 
 class DPBLEManager: NSObject{
     
+    // 发现外设回调
+    var centralState:((_ central:CBCentralManager)->Void)?
     
     // 发现外设回调
     var didDiscoverPeripheral:((_ central:CBCentralManager,_ peripheral:CBPeripheral,_ advertisementData:Dictionary<String, Any>,_ rssi:NSNumber)->Void)?
@@ -54,15 +56,15 @@ class DPBLEManager: NSObject{
     /// 采用工厂模式-可通过不同的key初始化多个实例
     private static var instances: [String: DPBLEManager] = [:]
     static func shared(_ key: String? = nil) -> DPBLEManager {
-        guard let key = key else {
-            let newInstance = DPBLEManager()
-            return newInstance
+        var classKey:String = "default"
+        if let key = key {
+            classKey = key
         }
-         if let instance = instances[key] {
+         if let instance = instances[classKey] {
              return instance
          } else {
              let newInstance = DPBLEManager()
-             instances[key] = newInstance
+             instances[classKey] = newInstance
              return newInstance
          }
      }
@@ -74,8 +76,12 @@ class DPBLEManager: NSObject{
         centralManager = CBCentralManager(delegate: self, queue: DispatchQueue.main, options: options)
     }
     
+    func startCheckStatus(block:((_ central:CBCentralManager)->Void)?) {
+        self.centralState = block
+    }
+    
     /// 扫描蓝牙外设 services=nil 为扫描所有的设备
-    func scanForPeripherals(_ services:[CBUUID]?, _ options: [String : Any]? = nil,block:((_ central:CBCentralManager,_ peripheral:CBPeripheral,_ advertisementData:Dictionary<String, Any>,_ rssi:NSNumber)->Void)? = nil) {
+    func scan(_ services:[CBUUID]?, _ options: [String : Any]? = nil,block:((_ central:CBCentralManager,_ peripheral:CBPeripheral,_ advertisementData:Dictionary<String, Any>,_ rssi:NSNumber)->Void)? = nil) {
         didDiscoverPeripheral = block
         serviceUUIDs = services
         centralManager.scanForPeripherals(withServices: services, options: options)
@@ -117,21 +123,8 @@ class DPBLEManager: NSObject{
 extension DPBLEManager:CBCentralManagerDelegate {
     // 蓝牙权限更新
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        switch central.state {
-        case .unknown:
-            print("Bluetooth status is UNKNOWN")
-        case .resetting:
-            print("Bluetooth status is RESETTING")
-        case .unsupported:
-            print("Bluetooth status is UNSUPPORTED")
-        case .unauthorized:
-            print("Bluetooth status is UNAUTHORIZED")
-        case .poweredOff:
-            print("Bluetooth status is POWERED OFF")
-        case .poweredOn:
-            print("Bluetooth status is POWERED ON")
-            centralManager.scanForPeripherals(withServices:serviceUUIDs, options: nil)
-        default: break
+        if self.centralState != nil {
+            self.centralState!(central)
         }
     }
     

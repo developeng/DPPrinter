@@ -27,7 +27,6 @@ class ViewController: UIViewController {
     // 热敏打印机服务ID， 一般为 18F0 ，具体根据打印机文档确定
     var printerServiceUUIDs:Array<CBUUID> = [CBUUID(string: "1101"),CBUUID(string: "18F0")]
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setupUI()
@@ -87,18 +86,23 @@ extension ViewController {
     // 扫描设备
     @objc func scan() {
         self.deviceArr.removeAll()
-        DPBLEManager.shared().scanForPeripherals(printerServiceUUIDs) { central, peripheral, advertisementData, rssi in
-            
-            // 打印机名称
-            let deviceName = peripheral.name ?? "Unknown Device"
-            // 检查设备的服务
-            var infoModel:DPDeviceInfo = DPDeviceInfo()
-            infoModel.name = deviceName
-            infoModel.peripheral = peripheral
-            infoModel.advertisementData = advertisementData
-            infoModel.rssi = rssi
-            self.deviceArr.append(infoModel)
-            self.tableView.reloadData()
+        // 检查状态
+        DPBLEManager.shared().startCheckStatus { central in
+            if central.state == .poweredOn {
+                // 开始扫描蓝牙
+                DPBLEManager.shared().scan(self.printerServiceUUIDs) { central, peripheral, advertisementData, rssi in
+                    // 打印机名称
+                    let deviceName = peripheral.name ?? "Unknown Device"
+                    // 检查设备的服务
+                    var infoModel:DPDeviceInfo = DPDeviceInfo()
+                    infoModel.name = deviceName
+                    infoModel.peripheral = peripheral
+                    infoModel.advertisementData = advertisementData
+                    infoModel.rssi = rssi
+                    self.deviceArr.append(infoModel)
+                    self.tableView.reloadData()
+                }
+            }
         }
     }
     

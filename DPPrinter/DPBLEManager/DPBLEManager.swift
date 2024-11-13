@@ -26,7 +26,7 @@ class DPBLEManager: NSObject{
     var didDiscoverPeripheral:((_ central:CBCentralManager,_ peripheral:CBPeripheral,_ advertisementData:Dictionary<String, Any>,_ rssi:NSNumber)->Void)?
     // 连接外设状态回调
     var connectStageBlock:((_ stage:DPOptionStage,_ peripheral:CBPeripheral,_ service:CBService?,_ character:CBCharacteristic?,_ error:Error?)->Void)?
- 
+    
     /**
      * 每次发送的最大数据长度，因为部分型号的蓝牙打印机一次写入数据过长，会导致打印乱码。
      * iOS 9之后，会调用系统的API来获取特性能写入的最大数据长度。
@@ -42,7 +42,7 @@ class DPBLEManager: NSObject{
     private var centralManager:CBCentralManager!
     /// 当前连接的外设
     private var printerPeripheral: CBPeripheral!
-  
+    
     private var serviceUUIDs: [CBUUID]? = nil
     private var characteristicUUIDs: [CBUUID]? = nil
     /// 可写入数据的特性
@@ -60,14 +60,14 @@ class DPBLEManager: NSObject{
         if let key = key {
             classKey = key
         }
-         if let instance = instances[classKey] {
-             return instance
-         } else {
-             let newInstance = DPBLEManager()
-             instances[classKey] = newInstance
-             return newInstance
-         }
-     }
+        if let instance = instances[classKey] {
+            return instance
+        } else {
+            let newInstance = DPBLEManager()
+            instances[classKey] = newInstance
+            return newInstance
+        }
+    }
     
     /// 初始化
     private override init() {
@@ -97,7 +97,7 @@ class DPBLEManager: NSObject{
         self.serviceUUIDs = serviceUUIDs
         self.characteristicUUIDs = characteristicUUIDs
         self.stopScanAfterConnected = stopScanAfterConnected
-            
+        
         centralManager.connect(peripheral, options: options)
         peripheral.delegate = self
         if connectStageBlock != nil {
@@ -164,18 +164,13 @@ extension DPBLEManager:CBPeripheralDelegate{
     /// 根据服务UUID寻找服务对象
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         
-        if error != nil {
-            if connectStageBlock != nil {
-                connectStageBlock!(.seekService,peripheral,nil,nil,error)
-            }
-            return
-        }
         if connectStageBlock != nil {
-            connectStageBlock!(.seekService,peripheral,nil,nil,nil)
+            connectStageBlock!(.seekService,peripheral,nil,nil,error)
         }
-       
-        peripheral.services?.forEach { service in
-            peripheral.discoverCharacteristics(characteristicUUIDs, for: service)
+        if error == nil {
+            peripheral.services?.forEach { service in
+                peripheral.discoverCharacteristics(characteristicUUIDs, for: service)
+            }
         }
     }
     /// 在服务对象UUID数组中寻找特定服务
@@ -186,21 +181,17 @@ extension DPBLEManager:CBPeripheralDelegate{
     /// 在一个服务中寻找特征值-
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         
-        if error != nil {
-            if connectStageBlock != nil {
-                connectStageBlock!(.seekCharacteristic,peripheral,service,nil,error)
-            }
-            return
-        }
         if connectStageBlock != nil {
-            connectStageBlock!(.seekCharacteristic,peripheral,service,nil,nil)
+            connectStageBlock!(.seekCharacteristic,peripheral,service,nil,error)
         }
-        self.getWriteCharacter(service: service)
-        // 开始读取服务数据
-        service.characteristics?.forEach { characteristic in
-              peripheral.discoverDescriptors(for: characteristic)
-              peripheral.readValue(for: characteristic)
-          }
+        if error == nil {
+            self.getWriteCharacter(service: service)
+            // 开始读取服务数据
+            service.characteristics?.forEach { characteristic in
+                peripheral.discoverDescriptors(for: characteristic)
+                peripheral.readValue(for: characteristic)
+            }
+        }
     }
     
     // 特性改变回调
@@ -226,15 +217,8 @@ extension DPBLEManager:CBPeripheralDelegate{
 extension DPBLEManager {
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
-        
-        if error != nil {
-            if connectStageBlock != nil {
-                connectStageBlock!(.seekDescriptors,peripheral,nil,characteristic,error)
-            }
-            return
-        }
         if connectStageBlock != nil {
-            connectStageBlock!(.seekDescriptors,peripheral,nil,characteristic,nil)
+            connectStageBlock!(.seekDescriptors,peripheral,nil,characteristic,error)
         }
     }
     
